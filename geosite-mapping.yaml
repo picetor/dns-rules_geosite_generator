@@ -1,0 +1,169 @@
+# =============================================================================
+# geosite-mapping.yaml - openppp2 dns-rules.txt 绕过列表映射配置
+# =============================================================================
+#
+# == 原理 ==
+# dns-rules.txt 是绕过列表——只放需要直连(不走隧道)的域名。
+# 未匹配到的域名默认全走隧道，无需在文件中列出。
+#
+# == 快速开始 ==
+#   cd tools/
+#   python geosite2dns.py -m geosite-mapping.yaml -o dns-rules.txt
+#
+# == 数据源选择 ==
+#
+#   geosite.dat (默认):
+#     MetaCubeX 编译好的 protobuf 二进制文件，自动下载。
+#     优点: 一次下载离线可用; 缺点: @cn 子分类被合并到父分类
+#
+#   GitHub 源文件 (推荐, from_source: true):
+#     直接从 MetaCubeX 仓库拉取原始 .list 文件。
+#     优点: 支持 @cn 子分类(如 category-games@cn); 缺点: 需要网络
+#
+# == 常见用法 ==
+#
+#   1) GitHub 源文件方式 (支持 @cn 子分类，推荐)
+#      python geosite2dns.py -m geosite-mapping.yaml -o dns-rules.txt
+#
+#   2) 指定 geosite.dat 文件
+#      python geosite2dns.py -m geosite-mapping.yaml -g ./geosite.dat -o dns-rules.txt
+#
+#   3) 自动下载 geosite.dat
+#      python geosite2dns.py -m geosite-mapping.yaml -o dns-rules.txt
+#
+#   4) 列出 geosite.dat 中所有可用分类
+#      python geosite2dns.py -g ./geosite.dat --list-categories
+#
+#   5) 自定义 DNS
+#      mappings:
+#        - category: cn
+#          dns: 114.114.114.114  # 替换默认 223.5.5.5
+#
+#   6) 广告拦截 (黑洞)
+#      mappings:
+#        - category: category-ads-all
+#          dns: 0.0.0.0           # 0.0.0.0 = 拦截
+#
+#   7) 自定义域名文件
+#      mappings:
+#        - category: custom
+#          dns: 223.5.5.5
+#          domain_file: my_domains.txt  # 每行一个域名
+#
+#   8) 本地 mosdns 解包目录
+#      mosdns v2dat unpack-domain -o ./geosite/ ./geosite.dat
+#      python geosite2dns.py -m geosite-mapping.yaml -x ./geosite/ -o dns-rules.txt
+#
+# == YAML 结构说明 ==
+#
+#   from_source: true/false
+#     true  = 从 GitHub 拉取源文件 (支持 @cn)
+#     false = 从 geosite.dat 解析
+#     优先级: CLI --from-source > CLI -g > 此字段
+#
+#   mappings:
+#     - category: "分类名"       # geosite 分类名 (或 "custom")
+#       dns: "DNS服务器IP"       # 直连用此 DNS; 0.0.0.0 = 黑洞拦截
+#       domain_file: "路径"      # 仅 category=custom 时生效
+#
+#   regexps:                    # 手工维护的正则规则 (可选)
+#     - pattern: "正则表达式"    # 不含 regexp: 前缀
+#       dns: "DNS服务器IP"
+#
+# == 输出格式 ==
+#   每条记录固定 83 bytes: domain 部分 ljust(69) + /dns-ip/nic + CRLF
+#   纯数据模式: 无注释、无空行、无分隔线
+#
+# == 部署到服务器 ==
+#   scp dns-rules.txt root@192.168.68.10:/opt/ppp/
+#   ssh root@192.168.68.10 systemctl restart openppp2
+#
+# =============================================================================
+
+# 数据源方式: true = GitHub 源文件 (推荐, 支持 @cn)
+from_source: true
+
+# 文件头注释
+header: |
+  openppp2 Bypass List
+  绕过列表: 直连域名 (其余默认走隧道)
+
+# 分类映射列表
+# 只需列出需要直连/拦截的分类，dns-rules.txt 中所有 domain 默认 /nic
+mappings:
+  # === 国内域名直连 (DNS: 阿里云) ===
+  - category: cn
+    dns: 223.5.5.5
+
+  # === 常用直连分类 ===
+  - category: apple
+    dns: 223.5.5.5
+  - category: microsoft
+    dns: 223.5.5.5
+  - category: category-game-platforms-download
+    dns: 223.5.5.5
+
+# 手工维护的正则表达式规则
+# 这些 regexp 分布在 AWS、TENCENT、GOG、EPICGAMES 等 geosite 分类中，
+# 但映射时未完整引入这些分类，故手工维护核心 regexp 条目。
+regexps:
+  # AWS China CloudFront DNS
+  - pattern: '.+\.awsdns-cn-[0-9][0-9]\.(biz|com|net|top)$'
+    dns: 223.5.5.5
+  - pattern: '.+\.awsdns-cn-[0-9][a-e0-9]\.cn$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (北京)
+  - pattern: '\.(.+-)?ap-beijing(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-beijing(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (成都)
+  - pattern: '\.(.+-)?ap-chengdu(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-chengdu(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (重庆)
+  - pattern: '\.(.+-)?ap-chongqing(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-chongqing(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (广州)
+  - pattern: '\.(.+-)?ap-guangzhou(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-guangzhou(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (南京)
+  - pattern: '\.(.+-)?ap-nanjing(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-nanjing(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (上海)
+  - pattern: '\.(.+-)?ap-shanghai(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-shanghai(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 腾讯云 COS (深圳)
+  - pattern: '\.(.+-)?ap-shenzhen(-.+)?\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '\.(.+-)?ap-shenzhen(-.+)?\.tencentcos\.(cn|com(\.cn)?)$'
+    dns: 223.5.5.5
+  # 游戏平台下载域名
+  - pattern: '^(.+\.)*zh\.okaapps\.com$'
+    dns: 223.5.5.5
+  - pattern: '^.+-mihayo\.akamaized\.net$'
+    dns: 223.5.5.5
+  - pattern: '^cdn-akamai-.+\.gog-services\.com$'
+    dns: 223.5.5.5
+  - pattern: '^cdn\d-epicgames-\d+\.file\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '^epicgames-download\d-\d+\.file\.myqcloud\.com$'
+    dns: 223.5.5.5
+  - pattern: '^gog-cdn-.+\.footprint\.net$'
+    dns: 223.5.5.5
+  - pattern: '^images(-\d)?\.gog-statics\.com$'
+    dns: 223.5.5.5
+  # Google Video CDN
+  - pattern: '^r+[0-9]+(---|\.)sn-(2x3|ni5|j5o)\w{5}\.googlevideo\.com$'
+    dns: 223.5.5.5
+  - pattern: '^r+[0-9]+(---|\.)sn-(2x3|ni5|j5o)\w{5}\.xn--ngstr-lra8j\.com$'
+    dns: 223.5.5.5
