@@ -1,6 +1,6 @@
 # dns-rules_geosite_generator
 
-将 [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat) 的 geosite 分类数据转换为 [openppp2](https://github.com/liudf0716/openppp2) 的 `dns-rules.txt` 绕过列表格式。
+将 [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat) 的 geosite 分类数据转换为 [openppp2](https://github.com/liulilittle/openppp2) 的 `dns-rules.txt` 绕过列表格式。
 
 ---
 
