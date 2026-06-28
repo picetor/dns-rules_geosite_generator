@@ -69,7 +69,7 @@ from_source: true   # true = GitHub 源文件（推荐）; false = geosite.dat
 # 分类映射列表（只放需要直连/拦截的分类）
 mappings:
   - category: cn                     # geosite 分类名
-    dns: 223.5.5.5                   # 直连 DNS; 0.0.0.0 = 黑洞拦截广告
+    dns: 223.5.5.5                   # 直连 DNS
 
   - category: apple
     dns: 223.5.5.5
@@ -89,7 +89,6 @@ regexps:
 | 场景 | 配置 |
 |------|------|
 | **国内域名直连** | `category: cn`, `dns: 223.5.5.5` |
-| **广告拦截** | `category: category-ads-all`, `dns: 0.0.0.0` |
 | **自定义 DNS** | 在 mapping 中指定不同的 DNS IP |
 | **本地文件** | `category: custom` + `domain_file` |
 
